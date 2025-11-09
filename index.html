@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>협업형 독후감/스터디 피드백 보드</title>
+    <!-- 1. Tailwind CSS CDN 로드 (유틸리티 클래스용) -->
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <!-- 2. 외부 CSS 파일 연결 -->
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="custom-alert" class="hidden"></div>
+
+    <header class="mb-8 text-center max-w-4xl mx-auto">
+        
+        <!-- 공유되는 보드 제목 입력 섹션 -->
+        <div class="mb-4">
+            <label for="board-title-input" class="block text-xl font-bold text-gray-700 mb-2">
+                📋 보드 주제/제목 (모두에게 공유됨)
+            </label>
+            <input type="text" id="board-title-input" placeholder="보드 주제를 입력하세요 (예: '알고리즘 스터디 3주차 회고')"
+                   onblur="saveBoardTitle(event)"
+                   class="w-full p-3 border border-gray-300 rounded-lg text-center text-xl font-semibold focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                   maxlength="100">
+        </div>
+
+        <!-- 메인 제목 (입력 필드 대신 사용자에게 표시되는 제목) -->
+        <h1 id="board-title-display" class="text-4xl font-extrabold text-gray-800 mb-2 mt-6">협업형 독후감/스터디 피드백 보드</h1>
+        <p class="text-lg text-gray-500">인상깊은 부분, 궁금한 부분, 어려웠던 부분을 공유해 보세요.</p>
+        
+        <!-- 데이터 다운로드 버튼 추가 -->
+        <div class="mt-4">
+            <button onclick="downloadCommentsAsCSV()"
+                    class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition duration-150 shadow-lg transform hover:scale-[1.01]">
+                ⬇️ 데이터 다운로드 (CSV 파일)
+            </button>
+        </div>
+
+        <div class="mt-4 p-2 text-sm bg-gray-100 rounded-lg inline-block text-gray-600">
+            현재 사용자 ID: <span id="current-user-id" class="font-mono text-gray-800 font-semibold">인증 중...</span>
+        </div>
+    </header>
+
+    <!-- 입력 폼 섹션 -->
+    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl mb-10 max-w-4xl mx-auto">
+        <h2 class="text-2xl font-bold text-gray-700 mb-6 border-b pb-3">새로운 코멘트 작성</h2>
+        
+        <!-- 작성자 이름 입력 -->
+        <div class="mb-6">
+            <label for="author-name" class="block text-lg font-medium text-gray-700 mb-2">
+                👤 작성자 이름
+            </label>
+            <input type="text" id="author-name" placeholder="이름을 입력하세요"
+                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                   maxlength="20">
+        </div>
+
+        <!-- 코멘트 유형 선택 -->
+        <div class="mb-6">
+            <label class="block text-lg font-medium text-gray-700 mb-3">
+                🏷️ 코멘트 유형 선택
+            </label>
+            <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                
+                <label class="flex items-center p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg cursor-pointer transition duration-150 border border-indigo-200">
+                    <input type="radio" name="comment-type" value="인상깊은 부분" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" checked>
+                    <span class="ml-3 font-medium text-indigo-700">인상깊은 부분</span>
+                </label>
+                
+                <label class="flex items-center p-3 bg-amber-50 hover:bg-amber-100 rounded-lg cursor-pointer transition duration-150 border border-amber-200">
+                    <input type="radio" name="comment-type" value="더 알아보고 싶은 부분" class="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300">
+                    <span class="ml-3 font-medium text-amber-700">더 알아보고 싶은 부분</span>
+                </label>
+
+                <label class="flex items-center p-3 bg-red-50 hover:bg-red-100 rounded-lg cursor-pointer transition duration-150 border border-red-200">
+                    <input type="radio" name="comment-type" value="이해하기 어려웠던 부분" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300">
+                    <span class="ml-3 font-medium text-red-700">이해하기 어려웠던 부분</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 코멘트 내용 입력 -->
+        <div class="mb-6">
+            <label for="comment-text" class="block text-lg font-medium text-gray-700 mb-2">
+                💬 코멘트 내용
+            </label>
+            <textarea id="comment-text" rows="4" placeholder="의견을 작성하세요 (최대 500자)"
+                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 resize-y"
+                      maxlength="500"></textarea>
+        </div>
+        
+        <!-- 제출 버튼 -->
+        <button onclick="submitComment()"
+                class="w-full py-3 px-4 bg-blue-600 text-white font-bold text-lg rounded-xl hover:bg-blue-700 transition duration-200 shadow-md transform hover:scale-[1.005]">
+            🚀 제출하기
+        </button>
+    </div>
+
+    <!-- 코멘트 표시 섹션 (실시간) -->
+    <div class="max-w-7xl mx-auto">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-3">공유된 피드백 (실시간 업데이트)</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- 인상깊은 부분 컬럼 -->
+            <div class="bg-indigo-50 p-4 rounded-xl shadow-inner min-h-[200px]">
+                <h3 class="text-xl font-semibold text-indigo-800 mb-4 border-b border-indigo-200 pb-2">✨ 인상깊은 부분</h3>
+                <div id="impressive-comments">
+                    <div class="p-4 text-center text-gray-500 italic">로딩 중...</div>
+                </div>
+            </div>
+
+            <!-- 더 알아보고 싶은 부분 컬럼 -->
+            <div class="bg-amber-50 p-4 rounded-xl shadow-inner min-h-[200px]">
+                <h3 class="text-xl font-semibold text-amber-800 mb-4 border-b border-amber-200 pb-2">📚 더 알아보고 싶은 부분</h3>
+                <div id="learn-more-comments">
+                    <div class="p-4 text-center text-gray-500 italic">로딩 중...</div>
+                </div>
+            </div>
+
+            <!-- 이해하기 어려웠던 부분 컬럼 -->
+            <div class="bg-red-50 p-4 rounded-xl shadow-inner min-h-[200px]">
+                <h3 class="text-xl font-semibold text-red-800 mb-4 border-b border-red-200 pb-2">🤯 이해하기 어려웠던 부분</h3>
+                <div id="difficult-comments">
+                    <div class="p-4 text-center text-gray-500 italic">로딩 중...</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- 3. 외부 JavaScript 파일 연결 -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
